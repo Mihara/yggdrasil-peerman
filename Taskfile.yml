@@ -1,0 +1,34 @@
+# https://taskfile.dev
+
+version: '3'
+
+tasks:
+
+  default:
+    desc: "List available tasks"
+    cmds:
+      - task -a
+    silent: true
+
+  build:
+    desc: "Build executable for release"
+    env:
+      CGO_ENABLED: 0
+    cmds:
+      - go build -ldflags="-s -w"
+    sources:
+      - ./*.go
+      - ./*.mod
+      - ./*.sum
+    generates:
+      - yggdrasil-peerman
+
+  install:
+    desc: "Install executable on local system and restart"
+    deps: [build]
+    sources:
+      - ./yggdrasil-peerman
+    cmds:
+      - sudo systemctl stop yggdrasil-peerman
+      - sudo cp yggdrasil-peerman /usr/local/bin/
+      - sudo systemctl start yggdrasil-peerman
