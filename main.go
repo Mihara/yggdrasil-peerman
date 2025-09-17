@@ -150,9 +150,10 @@ func (s *Server) query(send *admin.AdminSocketRequest) *admin.AdminSocketRespons
 	}
 	if recv.Status == "error" {
 		if err := recv.Error; err != "" {
-			// This one is permissible, it means we tried to remove a peer that wasn't defined.
-			if err != core.ErrLinkNotConfigured.Error() {
-				s.logger.Fatalf("Admin socket returned an error: %s", err)
+			// This one is permissible, it means we tried to remove a peer that wasn't defined,
+			// or add a peer that is already there.
+			if err != core.ErrLinkNotConfigured.Error() && err != core.ErrLinkAlreadyConfigured.Error() {
+				s.logger.Fatalf("Admin socket returned an unhandled error: %s", err)
 			}
 		} else {
 			s.logger.Fatal("Admin socket returned an error but didn't specify any error text")
