@@ -23,12 +23,12 @@ The logic here is that as long we are locally connected to a trusted router, we 
 **/etc/yggdrasil/peerman.yaml**:
 
 ```yaml
-endpoint: <the admin API endpoint on your machine>
+endpoint: <the admin API endpoint on your machine, if not default>
 routers:
   - <key of a trusted router>
   - ...
 peers:
-  - <peers to toggle same as in yggdrasil.conf>
+  - <peers to toggle, same as in yggdrasil.conf>
   - ...
 # Loop time as time - 10s, 1m, etc.
 looptime: 60s
@@ -36,24 +36,23 @@ looptime: 60s
 
 To launch, the reasonable way is systemd:
 
-**/etc/systemd/system/yggdrasil-peerman.service**:
+### /etc/systemd/system/yggdrasil-peerman.service
 
 ```systemd
 [Unit]
 Description=Yggdrasil Network Peer Manager
-Wants=network-online.target
-Wants=yggdrasil.service
-After=network-online.target
 After=yggdrasil.service
+PartOf=yggdrasil.service
 ConditionPathExists=/var/run/yggdrasil
 
 [Service]
+DynamicUser=true
 Group=yggdrasil
 ProtectSystem=strict
 NoNewPrivileges=true
 ReadWritePaths=/var/run/yggdrasil/ /run/yggdrasil/
 SyslogIdentifier=yggdrasil-peerman
-ExecStart=/usr/local/bin/yggdrasil-peerman -c /etc/yggdrasil/peerman.yaml
+ExecStart=/usr/local/sbin/yggdrasil-peerman -c /etc/yggdrasil/peerman.yaml
 Restart=always
 TimeoutStopSec=5
 
@@ -61,11 +60,19 @@ TimeoutStopSec=5
 WantedBy=multi-user.target
 ```
 
-This is a bit arcane, at least for me -- please check the systemd manual and understand what each of the options means. `yggdrasil-peerman` needs to read its own config file, needs access to the admin API endpoint, which defaults to `unix:///var/run/yggdrasil/yggdrasil.sock` on Linux, and it needs nothing else whatsoever, so ideally systemd should limit it to that exactly.
+### /etc/systemd/system/yggdrasil.service.d/override.conf
 
-## Limitations
+```systemd
+[Unit]
+Wants=yggdrasil-peerman.service
+StopBefore=yggdrasil-peerman.service
+```
 
-Currenly only works on Linux, because I decided it needs to drop privileges after startup, and that is my narrow use case. In general, I believe this logic should be a feature of Yggdrasil itself, and this is just a solution to tide me over until it is. I still welcome pull requests and what not to make it more applicable to other environments.
+This way, yggdrasil-peerman has as little access to the rest of the system as possible while still working, starts automatically after yggdrasil, and stops automatically before yggdrasil is stopped.
+
+## Caveat
+
+I believe this logic, or something equivalent, should be a feature of Yggdrasil itself. Which, granted, might take years. This is just an interim solution to tide me over until it is, so it is neither very polished nor cooked to perfection. I still welcome pull requests and what not to make it more applicable to other environments.
 
 ## License
 

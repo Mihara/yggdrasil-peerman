@@ -4,7 +4,6 @@ go 1.24.3
 
 require (
 	github.com/chaindead/zerocfg v0.1.9
-	github.com/sid77/drop v0.0.0-20171115104544-48930369f4db
 	github.com/yggdrasil-network/yggdrasil-go v0.5.12
 )
 

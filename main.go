@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sid77/drop"
 	"github.com/yggdrasil-network/yggdrasil-go/src/admin"
 	"github.com/yggdrasil-network/yggdrasil-go/src/core"
 
@@ -72,12 +71,6 @@ func run() int {
 		panic(err)
 	}
 	defer server.Shutdown()
-
-	// This is an antiquated way to drop privileges that only works on linux,
-	// but for now that's good enough.
-	if err := drop.DropPrivileges("nobody"); err != nil {
-		log.Fatal(err)
-	}
 
 	for {
 
