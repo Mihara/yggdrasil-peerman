@@ -208,31 +208,36 @@ func (s *Server) SetPeer(uri string, state bool) {
 func (s *Server) hasLocalPeers(keys []string) bool {
 	// Now the issue is with determining if any of them are local peers,
 	// because PeerEntry structure does not contain this information.
-	// We can only take a guess and assume that peers connected with a
-	// link-local address are what we want.
-	for _, peer := range *s.peers {
-		// Skip peers connections that are not actually up.
+	// We can only assume that peers connected on a link-local address
+	// are what we want to check for a matching key.
+
+	return slices.ContainsFunc(*s.peers, func(peer admin.PeerEntry) bool {
+
+		// Peers that are not up are not considered.
 		if !peer.Up {
-			continue
+			return false
 		}
 
+		// Peers whose urls we can't parse are not considered either.
 		url, err := url.Parse(peer.URI)
 		if err != nil {
-			s.logger.Fatal("bogus url in server response:", peer.URI)
+			return false
 		}
 
 		// Peer URIs that are not actually IP addresses are not autoconfigured anyway.
 		ip, err := netip.ParseAddr(url.Hostname())
 		if err != nil {
-			continue
+			return false
 		}
 
-		// It's a link-local address, so if the key matches, it's a trusted router.
-		if ip.IsLinkLocalUnicast() && slices.Contains(keys, peer.PublicKey) {
-			return true
+		// Only link-local unicast addresses are actually multicast peers.
+		if !ip.IsLinkLocalUnicast() {
+			return false
 		}
-	}
-	return false
+
+		// if the key matches, it's a trusted router.
+		return slices.Contains(keys, peer.PublicKey)
+	})
 }
 
 func stripQuery(thatUrl string) (string, error) {
