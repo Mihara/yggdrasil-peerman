@@ -185,10 +185,8 @@ func (s *Server) SetPeer(uri string, state bool) {
 
 		// Check if the peer is in the connected peer list.
 		// if not, don't bother the server.
-		for _, peer := range *s.peers {
-			if uri == peer.URI {
-				return
-			}
+		if !slices.ContainsFunc(*s.peers, func(e admin.PeerEntry) bool { return uri == e.URI }) {
+			return
 		}
 
 		s.logger.Println("removing peer:", uri)
